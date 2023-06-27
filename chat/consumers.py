@@ -1,49 +1,29 @@
+import asyncio
 import json
+import random
+import time
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
+async def _get_content_async(*args, **kwargs):
+
+    # Random blocking-sleep here to indicate some actual work being done
+    random_value = random.random()
+    time.sleep(random_value)
+
+    return random_value
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = f"chat_{self.room_name}"
-
-        # Join room group
-        # async_to_sync(self.channel_layer.group_add)(
-        #     self.room_group_name, self.channel_name
-        # )
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave room group
-        # async_to_sync(self.channel_layer.group_discard)(
-        #     self.room_group_name, self.channel_name
-        # )
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        pass
 
-    # Receive message from WebSocket
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
-
-        # Send message to room group
-        # async_to_sync(self.channel_layer.group_send)(
-        #     self.room_group_name, {"type": "chat_message", "message": message}
-        # )
-        await self.channel_layer.group_send(
-            self.room_group_name, {"type": "chat_message", "message": message}
-        )
-
-        # text_data_json = json.loads(text_data)
-        # message = text_data_json["message"]
-
-        # self.send(text_data=json.dumps({"message": message}))
-
-    # Receive message from room group
-    async def chat_message(self, event):
-        message = event["message"]
-
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({"message": message}))
+        while True:
+            content = await _get_content_async()
+            await asyncio.sleep(0)
+            await self.send(text_data=json.dumps({"message": content}))
